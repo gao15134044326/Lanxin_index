@@ -3,19 +3,14 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>图标导航面板</title>
-    <!-- Font Awesome 6 (免费图标库) -->
+    <title>应用授权导航</title>
+    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
-        /* ===== 全局重置 & 基础 ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* 样式与之前保持一致，仅微调颜色 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
             min-height: 100vh;
             background: linear-gradient(145deg, #f6f9fc 0%, #e9f1f8 100%);
             display: flex;
@@ -23,28 +18,21 @@
             align-items: center;
             padding: 40px 20px;
         }
-
-        /* ===== 主容器 ===== */
         .container {
             max-width: 1200px;
             width: 100%;
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255,255,255,0.6);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border-radius: 48px;
             padding: 48px 40px 56px;
-            box-shadow: 0 20px 60px rgba(0, 20, 40, 0.12),
-                0 8px 24px rgba(0, 0, 0, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            transition: all 0.2s;
+            box-shadow: 0 20px 60px rgba(0,20,40,0.12), 0 8px 24px rgba(0,0,0,0.04);
+            border: 1px solid rgba(255,255,255,0.5);
         }
-
-        /* ===== 头部 ===== */
         .header {
             text-align: center;
             margin-bottom: 48px;
         }
-
         .header h1 {
             font-size: 2.4rem;
             font-weight: 700;
@@ -56,41 +44,24 @@
             gap: 12px;
             flex-wrap: wrap;
         }
-
-        .header h1 i {
-            color: #2a7de1;
-            font-size: 2rem;
-        }
-
-        .header p {
-            margin-top: 8px;
-            color: #4a617c;
-            font-size: 1.05rem;
-            font-weight: 400;
-            letter-spacing: 0.2px;
-        }
-
+        .header h1 i { color: #2a7de1; font-size: 2rem; }
+        .header p { margin-top: 8px; color: #4a617c; font-size: 1.05rem; }
         .header .badge {
             display: inline-block;
             margin-top: 12px;
-            background: rgba(42, 125, 225, 0.12);
+            background: rgba(42,125,225,0.12);
             color: #1a5fb4;
             font-size: 0.8rem;
             font-weight: 600;
             padding: 4px 18px;
             border-radius: 40px;
-            letter-spacing: 0.3px;
-            border: 1px solid rgba(42, 125, 225, 0.15);
+            border: 1px solid rgba(42,125,225,0.15);
         }
-
-        /* ===== 图标网格 ===== */
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
             gap: 24px;
         }
-
-        /* ===== 卡片 ===== */
         .card {
             background: #ffffff;
             border-radius: 28px;
@@ -98,36 +69,23 @@
             text-align: center;
             text-decoration: none;
             color: #0b1e33;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
-                box-shadow 0.3s ease,
-                border-color 0.25s ease;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.02);
+            border: 1px solid rgba(255,255,255,0.7);
+            transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease, border-color 0.25s ease;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 190px;
-            position: relative;
             will-change: transform;
         }
-
-        /* 卡片悬浮效果 */
         .card:hover {
             transform: translateY(-8px) scale(1.01);
-            box-shadow: 0 20px 40px -8px rgba(0, 30, 60, 0.18),
-                0 8px 20px rgba(0, 0, 0, 0.04);
-            border-color: rgba(42, 125, 225, 0.25);
+            box-shadow: 0 20px 40px -8px rgba(0,30,60,0.18), 0 8px 20px rgba(0,0,0,0.04);
+            border-color: rgba(42,125,225,0.25);
         }
-
-        /* 卡片点击反馈 (JS 会添加) */
-        .card:active {
-            transform: scale(0.96);
-            transition-duration: 0.08s;
-        }
-
-        /* ===== 图标样式 ===== */
+        .card:active { transform: scale(0.96); transition-duration: 0.08s; }
         .card .icon {
             font-size: 3.2rem;
             line-height: 1;
@@ -135,392 +93,161 @@
             color: #2a7de1;
             transition: transform 0.3s ease, color 0.25s ease;
         }
-
-        .card:hover .icon {
-            transform: scale(1.08);
-            color: #1a5fb4;
-        }
-
-        /* 每个卡片可以单独定义图标颜色 (通过 data 属性或内联样式) */
-        .card[data-color="green"] .icon {
-            color: #1f9d6e;
-        }
-        .card[data-color="green"]:hover .icon {
-            color: #137a55;
-        }
-
-        .card[data-color="purple"] .icon {
-            color: #8b5cf6;
-        }
-        .card[data-color="purple"]:hover .icon {
-            color: #7c3aed;
-        }
-
-        .card[data-color="orange"] .icon {
-            color: #e67e22;
-        }
-        .card[data-color="orange"]:hover .icon {
-            color: #d35400;
-        }
-
-        .card[data-color="red"] .icon {
-            color: #e74c3c;
-        }
-        .card[data-color="red"]:hover .icon {
-            color: #c0392b;
-        }
-
-        .card[data-color="teal"] .icon {
-            color: #0ea5e9;
-        }
-        .card[data-color="teal"]:hover .icon {
-            color: #0284c7;
-        }
-
-        .card[data-color="pink"] .icon {
-            color: #ec4899;
-        }
-        .card[data-color="pink"]:hover .icon {
-            color: #db2777;
-        }
-
-        .card[data-color="indigo"] .icon {
-            color: #4f46e5;
-        }
-        .card[data-color="indigo"]:hover .icon {
-            color: #4338ca;
-        }
-
-        .card[data-color="amber"] .icon {
-            color: #f59e0b;
-        }
-        .card[data-color="amber"]:hover .icon {
-            color: #d97706;
-        }
-
-        /* ===== 卡片文字 ===== */
-        .card .title {
-            font-weight: 600;
-            font-size: 1.05rem;
-            margin-bottom: 4px;
-            color: #0b1e33;
-        }
-
-        .card .desc {
-            font-size: 0.8rem;
-            color: #6b7f96;
-            font-weight: 400;
-            line-height: 1.3;
-            max-width: 140px;
-            margin: 0 auto;
-        }
-
-        /* ===== 底部提示 ===== */
+        .card:hover .icon { transform: scale(1.08); color: #1a5fb4; }
+        /* 颜色主题（与之前相同） */
+        .card[data-color="green"] .icon { color: #1f9d6e; }
+        .card[data-color="green"]:hover .icon { color: #137a55; }
+        .card[data-color="purple"] .icon { color: #8b5cf6; }
+        .card[data-color="purple"]:hover .icon { color: #7c3aed; }
+        .card[data-color="orange"] .icon { color: #e67e22; }
+        .card[data-color="orange"]:hover .icon { color: #d35400; }
+        .card[data-color="red"] .icon { color: #e74c3c; }
+        .card[data-color="red"]:hover .icon { color: #c0392b; }
+        .card[data-color="teal"] .icon { color: #0ea5e9; }
+        .card[data-color="teal"]:hover .icon { color: #0284c7; }
+        .card[data-color="pink"] .icon { color: #ec4899; }
+        .card[data-color="pink"]:hover .icon { color: #db2777; }
+        .card[data-color="indigo"] .icon { color: #4f46e5; }
+        .card[data-color="indigo"]:hover .icon { color: #4338ca; }
+        .card[data-color="amber"] .icon { color: #f59e0b; }
+        .card[data-color="amber"]:hover .icon { color: #d97706; }
+        .card .title { font-weight: 600; font-size: 1.05rem; margin-bottom: 4px; color: #0b1e33; }
+        .card .desc { font-size: 0.8rem; color: #6b7f96; font-weight: 400; line-height: 1.3; max-width: 140px; margin: 0 auto; }
         .footer-note {
             margin-top: 40px;
             text-align: center;
             color: #7a8fa8;
             font-size: 0.85rem;
-            border-top: 1px solid rgba(0, 0, 0, 0.04);
+            border-top: 1px solid rgba(0,0,0,0.04);
             padding-top: 28px;
-            letter-spacing: 0.2px;
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 8px;
             flex-wrap: wrap;
         }
-
-        .footer-note i {
-            color: #2a7de1;
-            opacity: 0.6;
-        }
-
+        .footer-note i { color: #2a7de1; opacity: 0.6; }
         .footer-note code {
-            background: rgba(0, 0, 0, 0.04);
+            background: rgba(0,0,0,0.04);
             padding: 2px 12px;
             border-radius: 30px;
             font-size: 0.8rem;
             color: #2a4a6a;
             font-family: 'Menlo', monospace;
         }
-
-        /* ===== 响应式微调 ===== */
         @media (max-width: 700px) {
-            .container {
-                padding: 28px 16px 32px;
-                border-radius: 32px;
-            }
-
-            .header h1 {
-                font-size: 1.8rem;
-            }
-
-            .grid {
-                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-                gap: 16px;
-            }
-
-            .card {
-                min-height: 160px;
-                padding: 20px 12px 18px;
-                border-radius: 22px;
-            }
-
-            .card .icon {
-                font-size: 2.6rem;
-            }
-
-            .card .title {
-                font-size: 0.95rem;
-            }
-
-            .card .desc {
-                font-size: 0.7rem;
-                max-width: 110px;
-            }
+            .container { padding: 28px 16px 32px; border-radius: 32px; }
+            .header h1 { font-size: 1.8rem; }
+            .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; }
+            .card { min-height: 160px; padding: 20px 12px 18px; border-radius: 22px; }
+            .card .icon { font-size: 2.6rem; }
+            .card .title { font-size: 0.95rem; }
+            .card .desc { font-size: 0.7rem; max-width: 110px; }
         }
-
         @media (max-width: 420px) {
-            .grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 12px;
-            }
-
-            .card {
-                min-height: 140px;
-                padding: 16px 8px 14px;
-            }
-
-            .card .icon {
-                font-size: 2.2rem;
-                margin-bottom: 8px;
-            }
-
-            .header h1 {
-                font-size: 1.4rem;
-            }
-
-            .container {
-                padding: 20px 12px 24px;
-            }
-        }
-
-        /* ===== 加载/空状态 (备用) ===== */
-        .grid-empty {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 60px 20px;
-            color: #8a9fb8;
+            .grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .card { min-height: 140px; padding: 16px 8px 14px; }
+            .card .icon { font-size: 2.2rem; margin-bottom: 8px; }
+            .header h1 { font-size: 1.4rem; }
+            .container { padding: 20px 12px 24px; }
         }
     </style>
 </head>
 <body>
-
     <div class="container">
-
-        <!-- ===== 头部 ===== -->
         <div class="header">
-            <h1>
-                <i class="fa-regular fa-compass"></i>
-                导航面板
-            </h1>
-            <p>点击任意图标卡片，快速跳转到对应链接</p>
-            <span class="badge">
-                <i class="fa-regular fa-pen-to-square" style="margin-right:6px;"></i>
-                在下方数组中增删图标即可扩展
-            </span>
+            <h1><i class="fa-regular fa-id-card"></i> 应用授权导航</h1>
+            <p>点击卡片，通过 OAuth 授权跳转至对应应用</p>
+            <span class="badge"><i class="fa-regular fa-pen-to-square" style="margin-right:6px;"></i> 共 <span id="countDisplay">0</span> 个应用</span>
         </div>
 
-        <!-- ===== 图标网格 ===== -->
-        <div class="grid" id="iconGrid">
-            <!-- 由 JavaScript 动态渲染 -->
-        </div>
+        <div class="grid" id="iconGrid"></div>
 
-        <!-- ===== 底部 ===== -->
         <div class="footer-note">
-            <i class="fa-regular fa-circle-check"></i>
-            共 <span id="countDisplay">0</span> 个图标
+            <i class="fa-regular fa-circle-check"></i> 授权地址统一使用
+            <code>user-stage.e.lanxin.cn</code>
             <span style="opacity:0.3;margin:0 4px;">·</span>
-            <i class="fa-regular fa-code"></i>
-            修改 <code>iconsData</code> 数组即可扩展
+            <i class="fa-regular fa-code"></i> 修改 <code>apps</code> 数组即可扩展
         </div>
-
     </div>
 
     <script>
         // ================================================================
-        //  📌 配置数据 ———— 在这里增删改图标项
-        //  每个对象：{ icon, title, desc, url, color? }
-        //    icon  : Font Awesome 类名 (例如 "fa-brands fa-github")
-        //    title : 显示的名称
-        //    desc  : 简短描述 (可选)
-        //    url   : 点击跳转的链接
-        //    color : 可选 'green' | 'purple' | 'orange' | 'red' | 'teal' | 'pink' | 'indigo' | 'amber'
+        //  📌 应用数据 —— 根据 needScanApplication 列表生成
+        //  每个对象：{ path, title, icon, color, url }
         // ================================================================
-        const iconsData = [{
-            icon: 'fa-brands fa-github',
-            title: 'GitHub',
-            desc: '代码托管 · 协作',
-            url: 'https://github.com',
-            color: 'purple'
-        }, {
-            icon: 'fa-brands fa-google',
-            title: 'Google',
-            desc: '搜索 · 探索',
-            url: 'https://www.google.com',
-            color: 'teal'
-        }, {
-            icon: 'fa-brands fa-twitter',
-            title: 'Twitter / X',
-            desc: '社交 · 动态',
-            url: 'https://twitter.com',
-            color: 'pink'
-        }, {
-            icon: 'fa-brands fa-youtube',
-            title: 'YouTube',
-            desc: '视频 · 创作',
-            url: 'https://www.youtube.com',
-            color: 'red'
-        }, {
-            icon: 'fa-brands fa-linkedin',
-            title: 'LinkedIn',
-            desc: '职场 · 人脉',
-            url: 'https://www.linkedin.com',
-            color: 'indigo'
-        }, {
-            icon: 'fa-brands fa-instagram',
-            title: 'Instagram',
-            desc: '影像 · 生活',
-            url: 'https://www.instagram.com',
-            color: 'amber'
-        }, {
-            icon: 'fa-brands fa-facebook',
-            title: 'Facebook',
-            desc: '社交 · 连接',
-            url: 'https://www.facebook.com',
-            color: 'teal'
-        }, {
-            icon: 'fa-brands fa-wikipedia-w',
-            title: 'Wikipedia',
-            desc: '知识 · 百科',
-            url: 'https://www.wikipedia.org',
-            color: 'green'
-        }, {
-            icon: 'fa-brands fa-reddit-alien',
-            title: 'Reddit',
-            desc: '社区 · 讨论',
-            url: 'https://www.reddit.com',
-            color: 'orange'
-        }, {
-            icon: 'fa-brands fa-discord',
-            title: 'Discord',
-            desc: '语音 · 游戏',
-            url: 'https://discord.com',
-            color: 'purple'
-        }, {
-            icon: 'fa-brands fa-spotify',
-            title: 'Spotify',
-            desc: '音乐 · 播客',
-            url: 'https://www.spotify.com',
-            color: 'green'
-        }, {
-            icon: 'fa-brands fa-medium',
-            title: 'Medium',
-            desc: '写作 · 阅读',
-            url: 'https://medium.com',
-            color: 'amber'
-        }, {
-            icon: 'fa-brands fa-dev',
-            title: 'Dev.to',
-            desc: '开发者社区',
-            url: 'https://dev.to',
-            color: 'indigo'
-        }, {
-            icon: 'fa-brands fa-stack-overflow',
-            title: 'Stack Overflow',
-            desc: '编程问答',
-            url: 'https://stackoverflow.com',
-            color: 'orange'
-        }, {
-            icon: 'fa-brands fa-figma',
-            title: 'Figma',
-            desc: '设计 · 原型',
-            url: 'https://www.figma.com',
-            color: 'pink'
-        }, {
-            icon: 'fa-brands fa-slack',
-            title: 'Slack',
-            desc: '团队协作',
-            url: 'https://slack.com',
-            color: 'purple'
-        }];
+        const apps = [
+            { path: '/meetingRoom',    title: '会议室',     icon: 'fa-regular fa-building',      color: 'teal' },
+            { path: '/group',          title: '群组',       icon: 'fa-regular fa-users',          color: 'purple' },
+            { path: '/questionAnswer', title: '问答',       icon: 'fa-regular fa-circle-question', color: 'orange' },
+            { path: '/feedback',       title: '反馈',       icon: 'fa-regular fa-comment',        color: 'pink' },
+            { path: '/wage',           title: '工资',       icon: 'fa-regular fa-money-bill-1',   color: 'green' },
+            { path: '/noticeManagement', title: '公告管理', icon: 'fa-regular fa-bullhorn',       color: 'indigo' },
+            { path: '/mobileMeeting',  title: '移动会议',   icon: 'fa-regular fa-phone',          color: 'red' },
+            { path: '/visit',          title: '拜访',       icon: 'fa-regular fa-handshake',      color: 'amber' },
+            { path: '/externalUser',   title: '外部用户',   icon: 'fa-regular fa-user-plus',      color: 'teal' },
+            { path: '/tdTask',         title: '任务',       icon: 'fa-regular fa-list-check',     color: 'purple' },
+            { path: '/scheduleCalendar', title: '日程日历', icon: 'fa-regular fa-calendar',       color: 'green' },
+            { path: '/deviceRepair',   title: '设备维修',   icon: 'fa-regular fa-screwdriver-wrench', color: 'orange' },
+            { path: '/leave',          title: '请假',       icon: 'fa-regular fa-calendar-check', color: 'red' },
+            { path: '/clock',          title: '打卡',       icon: 'fa-regular fa-clock',          color: 'indigo' },
+            { path: '/syncAssistant',  title: '同步助手',   icon: 'fa-regular fa-arrows-rotate',  color: 'pink' }
+        ];
 
         // ================================================================
-        //  渲染逻辑
+        //  构造授权链接
+        //  模板：https://user-stage.e.lanxin.cn/user/passport/oauth2/authorize?appid=14803712-8601856&response_type=code&scope=SCOPE&state=STATE&redirect_uri=http://localhost:3100/login?dir=roleSelection?key=路径
+        // ================================================================
+        const BASE_URL = 'https://user-stage.e.lanxin.cn/user/passport/oauth2/authorize';
+        const APPID = '14803712-8601856';
+        const REDIRECT_URI_PREFIX = 'http://localhost:3100/login?dir=roleSelection?key=';
+
+        function buildAuthUrl(path) {
+            const redirectUri = REDIRECT_URI_PREFIX + encodeURIComponent(path); // 直接拼接，路径包含/，但可保留
+            // 注意：原示例未对redirect_uri编码，但为了安全，我们整体构建
+            // 这里直接拼接，浏览器会自动编码，但防止特殊字符，我们手动编码redirect_uri
+            const encodedRedirect = encodeURIComponent(redirectUri);
+            return `${BASE_URL}?appid=${APPID}&response_type=code&scope=SCOPE&state=STATE&redirect_uri=${encodedRedirect}`;
+        }
+
+        // 为每个应用生成完整URL
+        apps.forEach(app => {
+            app.url = buildAuthUrl(app.path);
+        });
+
+        // ================================================================
+        //  渲染
         // ================================================================
         const grid = document.getElementById('iconGrid');
         const countDisplay = document.getElementById('countDisplay');
 
-        function renderIcons() {
-            if (!iconsData || iconsData.length === 0) {
-                grid.innerHTML = `
-                    <div class="grid-empty">
-                        <i class="fa-regular fa-circle-exclamation" style="font-size:2.4rem;display:block;margin-bottom:12px;color:#b0c8dd;"></i>
-                        暂无图标数据，请在 <code>iconsData</code> 中添加
-                    </div>
-                `;
+        function renderApps() {
+            if (!apps.length) {
+                grid.innerHTML = `<div class="grid-empty"><i class="fa-regular fa-circle-exclamation" style="font-size:2.4rem;display:block;margin-bottom:12px;color:#b0c8dd;"></i>暂无应用数据</div>`;
                 countDisplay.textContent = '0';
                 return;
             }
 
             let html = '';
-            for (let i = 0; i < iconsData.length; i++) {
-                const item = iconsData[i];
-                // 安全兜底
-                const icon = item.icon || 'fa-regular fa-circle-question';
-                const title = item.title || '未命名';
-                const desc = item.desc || '';
-                const url = item.url || '#';
-                const color = item.color || '';
-
-                // 构建 data-color 属性
-                const colorAttr = color ? ` data-color="${color}"` : '';
-
+            apps.forEach(item => {
+                const colorAttr = item.color ? ` data-color="${item.color}"` : '';
                 html += `
-                    <a class="card" href="${url}" target="_blank" rel="noopener noreferrer"${colorAttr}>
-                        <div class="icon"><i class="${icon}"></i></div>
-                        <div class="title">${title}</div>
-                        ${desc ? `<div class="desc">${desc}</div>` : ''}
+                    <a class="card" href="${item.url}" target="_blank" rel="noopener noreferrer"${colorAttr}>
+                        <div class="icon"><i class="${item.icon}"></i></div>
+                        <div class="title">${item.title}</div>
+                        <div class="desc">${item.path}</div>
                     </a>
                 `;
-            }
-
+            });
             grid.innerHTML = html;
-            countDisplay.textContent = iconsData.length;
+            countDisplay.textContent = apps.length;
         }
 
-        // ================================================================
-        //  可选：点击卡片时添加微小的触感反馈 (不影响跳转)
-        // ================================================================
-        document.addEventListener('click', (e) => {
-            const card = e.target.closest('.card');
-            if (card) {
-                // 只是增加一个瞬间的类，用于 :active 样式
-                // 浏览器原生 :active 已经足够，这里不做额外处理
-            }
-        });
+        renderApps();
 
-        // ================================================================
-        //  执行渲染
-        // ================================================================
-        renderIcons();
-
-        // 如果数据在运行时被修改，可以重新调用 renderIcons()
-        // 例如在控制台执行：iconsData.push({ icon: 'fa-brands fa-xxx', title: 'New', url: '#' }); renderIcons();
-        console.log('✅ 图标导航已加载 · 共 ' + iconsData.length + ' 项');
-        console.log('💡 在控制台修改 iconsData 数组后，执行 renderIcons() 刷新');
+        // 暴露到控制台方便调试
+        console.log('✅ 应用导航已加载，共 ' + apps.length + ' 个');
+        console.log('💡 修改 apps 数组后执行 renderApps() 刷新');
     </script>
-
 </body>
 </html>
