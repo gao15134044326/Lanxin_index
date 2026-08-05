@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>蓝信 OAuth 授权 · 自动获取 State 并拼接链接</title>
+    <style>
+        /* ===== Reset & Variables ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-light: #dbeafe;
+            --success: #16a34a;
+            --success-bg: #dcfce7;
+            --danger: #dc2626;
+            --danger-bg: #fee2e2;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+            --radius: 12px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background: var(--gray-50);
+            font-family: var(--font);
+            color: var(--gray-800);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 880px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 36px 40px;
+        }
+
+        /* ===== Header ===== */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--gray-100);
+            margin-bottom: 28px;
+        }
+        .logo {
+            width: 44px;
+            height: 44px;
+            background: var(--primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+        .header h1 small {
+            font-weight: 400;
+            font-size: 14px;
+            color: var(--gray-500);
+            margin-left: 10px;
+        }
+        .status-badge {
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 500;
+            background: var(--gray-100);
+            color: var(--gray-500);
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .status-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gray-400);
+            transition: background 0.3s;
+        }
+        .status-badge.active {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+        .status-badge.active .dot {
+            background: var(--success);
+        }
+        .status-badge.error {
+            background: var(--danger-bg);
+            color: var(--danger);
+        }
+        .status-badge.error .dot {
+            background: var(--danger);
+        }
+
+        /* ===== Form ===== */
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 4px;
+        }
+        .form-group label .required {
+            color: var(--danger);
+            margin-left: 2px;
+        }
+        .form-group .hint {
+            font-size: 12px;
+            color: var(--gray-400);
+            margin-top: 2px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 640px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 20px;
+            }
+            .header h1 small {
+                display: block;
+                margin-left: 0;
+                margin-top: 2px;
+            }
+            .header {
+                flex-wrap: wrap;
+            }
+            .status-badge {
+                margin-left: 0;
+            }
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: var(--font);
+            color: var(--gray-800);
+            background: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+        input:focus,
+        select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+        input[readonly] {
+            background: var(--gray-50);
+            color: var(--gray-500);
+            cursor: not-allowed;
+        }
+
+        /* ===== Buttons ===== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .btn:active {
+            transform: scale(0.97);
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: #1d4ed8;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+        }
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+        }
+        .btn-success:hover:not(:disabled) {
+            background: #15803d;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);
+        }
+        .btn-outline {
+            background: transparent;
+            color: var(--gray-600);
+            border: 1px solid var(--gray-200);
+        }
+        .btn-outline:hover:not(:disabled) {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+        }
+        .btn-danger-outline {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+        .btn-danger-outline:hover:not(:disabled) {
+            background: var(--danger-bg);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        /* ===== Info Display ===== */
+        .info-box {
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-top: 8px;
+            word-break: break-all;
+            font-size: 14px;
+        }
+        .info-box .label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .info-box .value {
+            font-family: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+            font-size: 13px;
+            color: var(--gray-800);
+        }
+        .info-box .value .hl {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .info-box .value .dim {
+            color: var(--gray-400);
+        }
+
+        .link-box {
+            background: var(--gray-900);
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-top: 8px;
+            word-break: break-all;
+            font-size: 13px;
+            font-family: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+            color: #e2e8f0;
+            position: relative;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .link-box .link-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gray-400);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .link-box .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: #94a3b8;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: var(--font);
+            transition: background 0.2s, color 0.2s;
+        }
+        .link-box .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #e2e8f0;
+        }
+
+        /* ===== Logs ===== */
+        .log-container {
+            background: var(--gray-900);
+            border-radius: 8px;
+            padding: 14px 18px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+            font-size: 12.5px;
+            line-height: 1.8;
+            margin-top: 8px;
+        }
+        .log-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .log-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .log-container::-webkit-scrollbar-thumb {
+            background: var(--gray-600);
+            border-radius: 4px;
+        }
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: #cbd5e1;
+        }
+        .log-entry .log-time {
+            color: var(--gray-500);
+            margin-right: 10px;
+            user-select: none;
+        }
+        .log-entry .log-level {
+            display: inline-block;
+            padding: 0 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 10px;
+            letter-spacing: 0.3px;
+            margin-right: 8px;
+            text-transform: uppercase;
+        }
+        .log-entry .log-level.info {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+        .log-entry .log-level.success {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+        }
+        .log-entry .log-level.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+        .log-entry .log-msg {
+            color: #e2e8f0;
+        }
+        .log-entry .log-msg .hl {
+            color: #fcd34d;
+        }
+        .log-empty {
+            color: var(--gray-500);
+            font-style: italic;
+            font-size: 13px;
+            font-family: var(--font);
+        }
+
+        /* ===== Toast ===== */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--gray-900);
+            color: #fff;
+            padding: 10px 28px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: var(--font);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ===== Utility ===== */
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mt-12 {
+            margin-top: 12px;
+        }
+        .mt-16 {
+            margin-top: 16px;
+        }
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .text-muted {
+            color: var(--gray-500);
+            font-size: 13px;
+        }
+        .flex {
+            display: flex;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .gap-8 {
+            gap: 8px;
+        }
+        .flex-wrap {
+            flex-wrap: wrap;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .truncate {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: inline-block;
+            vertical-align: bottom;
+        }
+        @media (max-width: 480px) {
+            .truncate {
+                max-width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Toast -->
+    <div id="toast" class="toast">✅ 已复制到剪贴板</div>
+
+    <div class="container">
+
+        <!-- ===== HEADER ===== -->
+        <header class="header">
+            <div class="logo">蓝</div>
+            <h1>
+                授权链接生成器
+                <small>自动获取 State 并拼接</small>
+            </h1>
+            <div id="statusBadge" class="status-badge">
+                <span class="dot"></span>
+                <span id="statusText">初始化中...</span>
+            </div>
+        </header>
+
+        <!-- ===== 配置参数 ===== -->
+        <div class="form-group">
+            <label>API 基础地址 <span class="required">*</span></label>
+            <input id="apiBaseUrl" type="text" placeholder="https://user-stage.e.lanxin.cn" value="https://user-stage.e.lanxin.cn" />
+            <div class="hint">蓝信 API 服务根地址，用于调用 /webapp-login-init</div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>app_id <span class="required">*</span></label>
+                <input id="appid" type="text" placeholder="例如: 14803712-5193984" value="14803712-5193984" />
+                <div class="hint">蓝信第三方应用 ID</div>
+            </div>
+            <div class="form-group">
+                <label>provider</label>
+                <input id="provider" type="text" value="lanxin" readonly />
+                <div class="hint">固定为 lanxin</div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>client_redirect_uri <span class="required">*</span></label>
+                <input id="redirectUri" type="text" placeholder="回调地址" value="https://lanyu-stage.e.lanxin.cn/webapp-authorize" />
+                <div class="hint">必须与蓝信应用配置的回调地址一致</div>
+            </div>
+            <div class="form-group">
+                <label>scope</label>
+                <input id="scope" type="text" placeholder="授权范围" value="SCOPE" />
+                <div class="hint">多个 scope 用逗号分隔</div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>授权端点</label>
+            <input id="authEndpoint" type="text" placeholder="授权地址" value="https://user-stage.e.lanxin.cn/user/passport/oauth2/authorize" />
+            <div class="hint">蓝信 OAuth 授权端点，用于拼接授权链接</div>
+        </div>
+
+        <div class="btn-group">
+            <button id="btnFetchState" class="btn btn-primary">🔄 获取 State</button>
+            <button id="btnJump" class="btn btn-success" disabled>🚀 跳转授权</button>
+            <button id="btnReset" class="btn btn-danger-outline">↺ 重置</button>
+        </div>
+
+        <!-- ===== State 信息 ===== -->
+        <div class="mt-16">
+            <div class="flex-between flex-wrap gap-8">
+                <span style="font-weight:600;font-size:14px;color:var(--gray-700);">📋 State 信息</span>
+                <span id="stateTime" style="font-size:13px;color:var(--gray-400);"></span>
+            </div>
+            <div class="info-box">
+                <span class="label">state</span>
+                <span class="value" id="stateDisplay" style="color:var(--gray-400);">等待获取...</span>
+            </div>
+            <div class="info-box mt-8">
+                <span class="label">有效期</span>
+                <span class="value" id="expiresDisplay">-- 秒</span>
+            </div>
+            <div class="info-box mt-8" style="display:none;" id="resultBox">
+                <span class="label">响应结果</span>
+                <span class="value" id="resultDisplay"></span>
+            </div>
+        </div>
+
+        <!-- ===== 拼接后的授权链接 ===== -->
+        <div class="mt-16">
+            <div class="flex-between flex-wrap gap-8">
+                <span style="font-weight:600;font-size:14px;color:var(--gray-700);">🔗 授权链接</span>
+                <span id="linkStatus" style="font-size:13px;color:var(--gray-400);">等待生成...</span>
+            </div>
+            <div class="link-box" id="linkDisplay">
+                <span class="link-label">AUTHORIZATION URL</span>
+                <span style="color:var(--gray-400);font-family:var(--font);">请先获取 state</span>
+                <button class="copy-btn" id="copyLinkBtn" style="display:none;">📋 复制</button>
+            </div>
+        </div>
+
+        <!-- ===== 请求示例 ===== -->
+        <div class="mt-16">
+            <details style="cursor:pointer;font-size:14px;color:var(--gray-500);">
+                <summary style="font-weight:500;color:var(--gray-600);">📄 查看请求 / 响应示例</summary>
+                <div style="background:var(--gray-900);border-radius:8px;padding:14px 18px;margin-top:8px;font-family:'JetBrains Mono','SF Mono',monospace;font-size:12.5px;color:#e2e8f0;overflow-x:auto;white-space:pre-wrap;word-break:break-all;">
+                    <span style="color:#60a5fa;">// Request</span>
+                    <span style="color:#fcd34d;">POST</span> <span style="color:#6ee7b7;">{api_base_url}</span><span style="color:#e2e8f0;">/webapp-login-init</span>
+                    <span style="color:#e2e8f0;">Headers: Content-Type: application/json</span>
+                    <span style="color:#e2e8f0;">Body:</span>
+                    {
+                      <span style="color:#fcd34d;">"app_id"</span>: <span style="color:#6ee7b7;">"YOUR_LANXIN_APP_ID"</span>,
+                      <span style="color:#fcd34d;">"provider"</span>: <span style="color:#6ee7b7;">"lanxin"</span>,
+                      <span style="color:#fcd34d;">"client_redirect_uri"</span>: <span style="color:#6ee7b7;">"https://your-app.example.com/callback"</span>
+                    }
+
+                    <span style="color:#60a5fa;display:block;margin-top:6px;">// Response</span>
+                    {
+                      <span style="color:#fcd34d;">"result"</span>: <span style="color:#6ee7b7;">"success"</span>,
+                      <span style="color:#fcd34d;">"state"</span>: <span style="color:#6ee7b7;">"a1b2c3d4..."</span>,
+                      <span style="color:#fcd34d;">"expires_in"</span>: <span style="color:#fcd34d;">300</span>,
+                      <span style="color:#fcd34d;">"app_id"</span>: <span style="color:#6ee7b7;">"your_third_party_app_id"</span>,
+                      <span style="color:#fcd34d;">"provider"</span>: <span style="color:#6ee7b7;">"lanxin"</span>
+                    }
+                </div>
+            </details>
+        </div>
+
+        <!-- ===== 日志 ===== -->
+        <div class="mt-16">
+            <div class="flex-between flex-wrap gap-8">
+                <span style="font-weight:600;font-size:14px;color:var(--gray-700);">📝 日志</span>
+                <button id="btnClearLogs" class="btn btn-outline" style="padding:4px 14px;font-size:12px;">清空</button>
+            </div>
+            <div class="log-container" id="logContainer">
+                <div class="log-empty">⏳ 页面加载中，正在初始化...</div>
+            </div>
+        </div>
+
+        <div class="text-center text-muted mt-16" style="font-size:12px;border-top:1px solid var(--gray-100);padding-top:16px;">
+            进入页面后自动请求 /webapp-login-init 获取 state，拼接完整授权链接
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  STATE
+        // ============================================================
+        const state = {
+            apiBaseUrl: '',
+            appid: '',
+            provider: 'lanxin',
+            redirectUri: '',
+            scope: '',
+            authEndpoint: '',
+            stateParam: null,
+            expiresIn: null,
+            stateTime: null,
+            authUrl: null,
+            isReady: false,
+            lastResponse: null,
+        };
+
+        // ============================================================
+        //  DOM REFS
+        // ============================================================
+        const $ = (id) => document.getElementById(id);
+        const el = {
+            apiBaseUrl: $('apiBaseUrl'),
+            appid: $('appid'),
+            provider: $('provider'),
+            redirectUri: $('redirectUri'),
+            scope: $('scope'),
+            authEndpoint: $('authEndpoint'),
+
+            btnFetchState: $('btnFetchState'),
+            btnJump: $('btnJump'),
+            btnReset: $('btnReset'),
+            btnClearLogs: $('btnClearLogs'),
+
+            stateDisplay: $('stateDisplay'),
+            expiresDisplay: $('expiresDisplay'),
+            stateTime: $('stateTime'),
+            resultBox: $('resultBox'),
+            resultDisplay: $('resultDisplay'),
+
+            linkDisplay: $('linkDisplay'),
+            linkStatus: $('linkStatus'),
+            copyLinkBtn: $('copyLinkBtn'),
+
+            logContainer: $('logContainer'),
+            statusBadge: $('statusBadge'),
+            statusText: $('statusText'),
+
+            toast: $('toast'),
+        };
+
+        // ============================================================
+        //  LOGGER
+        // ============================================================
+        function log(message, level = 'info') {
+            const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+            const entry = document.createElement('div');
+            entry.className = 'log-entry fade-in';
+            entry.innerHTML = `
+                <span class="log-time">${time}</span>
+                <span class="log-level ${level}">${level}</span>
+                <span class="log-msg">${message}</span>
+            `;
+            const container = el.logContainer;
+            const empty = container.querySelector('.log-empty');
+            if (empty) empty.remove();
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+            while (container.children.length > 150) {
+                container.removeChild(container.firstChild);
+            }
+        }
+
+        function logInfo(msg) { log(msg, 'info'); }
+
+        function logSuccess(msg) { log('✅ ' + msg, 'success'); }
+
+        function logError(msg) { log('❌ ' + msg, 'error'); }
+
+        function clearLogs() {
+            el.logContainer.innerHTML = `<div class="log-empty">📭 日志已清空</div>`;
+        }
+
+        // ============================================================
+        //  TOAST
+        // ============================================================
+        let toastTimer = null;
+
+        function showToast(msg) {
+            const t = el.toast;
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        // ============================================================
+        //  HELPERS
+        // ============================================================
+        function getConfig() {
+            const apiBaseUrl = el.apiBaseUrl.value.trim().replace(/\/+$/, '');
+            const appid = el.appid.value.trim();
+            const redirectUri = el.redirectUri.value.trim();
+            const scope = el.scope.value.trim() || 'SCOPE';
+            const authEndpoint = el.authEndpoint.value.trim().replace(/\/+$/, '');
+            const provider = el.provider.value.trim() || 'lanxin';
+
+            if (!apiBaseUrl) throw new Error('请填写 API 基础地址');
+            if (!appid) throw new Error('请填写 app_id');
+            if (!redirectUri) throw new Error('请填写 client_redirect_uri');
+            if (!authEndpoint) throw new Error('请填写授权端点');
+
+            return { apiBaseUrl, appid, redirectUri, scope, authEndpoint, provider };
+        }
+
+        function buildAuthUrl(stateParam) {
+            const cfg = getConfig();
+            // 使用用户配置的授权端点
+            const url = `${cfg.authEndpoint}?appid=${encodeURIComponent(cfg.appid)}&response_type=code&scope=${encodeURIComponent(cfg.scope)}&state=${encodeURIComponent(stateParam)}&redirect_uri=${encodeURIComponent(cfg.redirectUri)}`;
+            return url;
+        }
+
+        function updateStatus(text, type = 'idle') {
+            el.statusText.textContent = text;
+            el.statusBadge.className = 'status-badge';
+            if (type === 'active') el.statusBadge.classList.add('active');
+            else if (type === 'error') el.statusBadge.classList.add('error');
+        }
+
+        function renderState(stateParam, expiresIn, responseData) {
+            if (stateParam) {
+                el.stateDisplay.textContent = stateParam;
+                el.stateDisplay.style.color = 'var(--gray-800)';
+                el.expiresDisplay.textContent = expiresIn || '--';
+                el.stateTime.textContent = `⏱ 获取于 ${new Date().toLocaleTimeString()}`;
+            } else {
+                el.stateDisplay.textContent = '等待获取...';
+                el.stateDisplay.style.color = 'var(--gray-400)';
+                el.expiresDisplay.textContent = '-- 秒';
+                el.stateTime.textContent = '';
+            }
+
+            // 显示响应中的 result
+            if (responseData && responseData.result) {
+                el.resultBox.style.display = 'block';
+                const resultVal = responseData.result;
+                el.resultDisplay.textContent = resultVal;
+                el.resultDisplay.style.color = resultVal === 'success' ? 'var(--success)' : 'var(--danger)';
+            } else {
+                el.resultBox.style.display = 'none';
+            }
+        }
+
+        function renderLink(url) {
+            const display = el.linkDisplay;
+            if (url) {
+                display.innerHTML = `
+                    <span class="link-label">AUTHORIZATION URL</span>
+                    <span>${url}</span>
+                    <button class="copy-btn" id="copyLinkBtn">📋 复制</button>
+                `;
+                const newCopyBtn = display.querySelector('.copy-btn');
+                if (newCopyBtn) {
+                    newCopyBtn.addEventListener('click', () => {
+                        copyToClipboard(url);
+                    });
+                }
+                el.linkStatus.textContent = '✅ 已生成';
+                el.linkStatus.style.color = 'var(--success)';
+            } else {
+                display.innerHTML = `
+                    <span class="link-label">AUTHORIZATION URL</span>
+                    <span style="color:var(--gray-400);font-family:var(--font);">请先获取 state</span>
+                `;
+                el.linkStatus.textContent = '等待生成...';
+                el.linkStatus.style.color = 'var(--gray-400)';
+            }
+        }
+
+        function copyToClipboard(text) {
+            if (!text) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('✅ 已复制到剪贴板');
+                }).catch(() => fallbackCopy(text));
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            ta.style.top = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                showToast('✅ 已复制到剪贴板');
+            } catch (_) {
+                showToast('⚠️ 复制失败，请手动复制');
+            }
+            document.body.removeChild(ta);
+        }
+
+        // ============================================================
+        //  CORE: 获取 State（完全对齐请求示例）
+        // ============================================================
+        async function fetchState() {
+            try {
+                const cfg = getConfig();
+
+                // 保存配置
+                state.apiBaseUrl = cfg.apiBaseUrl;
+                state.appid = cfg.appid;
+                state.redirectUri = cfg.redirectUri;
+                state.scope = cfg.scope;
+                state.authEndpoint = cfg.authEndpoint;
+                state.provider = cfg.provider;
+
+                const apiUrl = `${cfg.apiBaseUrl}/webapp-login-init`;
+
+                logInfo(`📡 请求: POST ${apiUrl}`);
+                updateStatus('请求中...', 'idle');
+                el.btnFetchState.disabled = true;
+
+                // 请求体 — 完全对齐用户提供的示例
+                const requestBody = {
+                    app_id: cfg.appid,
+                    provider: cfg.provider,
+                    client_redirect_uri: cfg.redirectUri,
+                };
+
+                logInfo(`📤 请求体: ${JSON.stringify(requestBody)}`);
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody),
+                });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${text.slice(0, 150)}`);
+                }
+
+                const data = await response.json();
+
+                // 检查响应格式 — 对齐示例
+                if (data.result !== 'success') {
+                    throw new Error(`接口返回 result: ${data.result || 'unknown'}`);
+                }
+
+                if (!data.state) {
+                    throw new Error('响应中缺少 state 字段');
+                }
+
+                state.stateParam = data.state;
+                state.expiresIn = data.expires_in || 300;
+                state.stateTime = Date.now();
+                state.lastResponse = data;
+
+                renderState(data.state, data.expires_in, data);
+
+                // 拼接授权链接
+                const authUrl = buildAuthUrl(data.state);
+                state.authUrl = authUrl;
+                renderLink(authUrl);
+
+                state.isReady = true;
+                el.btnJump.disabled = false;
+
+                logSuccess(`state 获取成功: ${data.state} (有效期 ${data.expires_in || 300}s)`);
+                logInfo(`🔗 授权链接已生成，长度 ${authUrl.length} 字符`);
+                if (data.app_id) logInfo(`📌 app_id: ${data.app_id}`);
+                if (data.provider) logInfo(`📌 provider: ${data.provider}`);
+                updateStatus('已就绪 ✅', 'active');
+
+            } catch (err) {
+                logError(`获取 state 失败: ${err.message}`);
+                updateStatus('失败 ❌', 'error');
+                renderState(null, null, null);
+                renderLink(null);
+                state.isReady = false;
+                el.btnJump.disabled = true;
+            } finally {
+                el.btnFetchState.disabled = false;
+            }
+        }
+
+        // ============================================================
+        //  跳转授权
+        // ============================================================
+        function jumpToAuth() {
+            if (!state.authUrl) {
+                logError('请先获取 state 并生成授权链接');
+                return;
+            }
+            logInfo(`🚀 跳转到授权页面...`);
+            window.location.href = state.authUrl;
+        }
+
+        // ============================================================
+        //  重置
+        // ============================================================
+        function resetAll() {
+            state.stateParam = null;
+            state.expiresIn = null;
+            state.stateTime = null;
+            state.authUrl = null;
+            state.isReady = false;
+            state.lastResponse = null;
+
+            renderState(null, null, null);
+            renderLink(null);
+            el.btnJump.disabled = true;
+            updateStatus('已重置', 'idle');
+            logInfo('🔄 已重置所有状态');
+        }
+
+        // ============================================================
+        //  自动初始化：进入页面自动获取 state
+        // ============================================================
+        async function autoInit() {
+            logInfo('🚀 页面加载完成，自动获取 state...');
+            updateStatus('初始化中...', 'idle');
+            await new Promise(r => setTimeout(r, 300));
+            await fetchState();
+        }
+
+        // ============================================================
+        //  INIT
+        // ============================================================
+        function init() {
+            // ---- Event Listeners ----
+            el.btnFetchState.addEventListener('click', fetchState);
+            el.btnJump.addEventListener('click', jumpToAuth);
+            el.btnReset.addEventListener('click', resetAll);
+            el.btnClearLogs.addEventListener('click', clearLogs);
+
+            // Enter key support
+            const inputs = [el.apiBaseUrl, el.appid, el.redirectUri, el.scope, el.authEndpoint];
+            inputs.forEach(inp => {
+                inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') fetchState(); });
+            });
+
+            // ---- 检查是否为回调模式 ----
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('code')) {
+                logInfo('📨 检测到回调参数 code，请手动点击 "获取 State" 重新开始');
+                updateStatus('回调模式', 'idle');
+                el.btnJump.disabled = true;
+                el.btnFetchState.disabled = false;
+                el.stateDisplay.textContent = '— 回调模式 —';
+                el.stateDisplay.style.color = 'var(--gray-400)';
+                return;
+            }
+
+            // ---- 自动获取 ----
+            autoInit();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+
+</body>
+</html>
